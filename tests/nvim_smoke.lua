@@ -47,10 +47,42 @@ assert_equal(nil, normal.bg, "transparent Normal background")
 local ui = require("plugins.ui")
 local editor = require("plugins.editor")
 local treesitter = require("plugins.treesitter")
+local coding = require("plugins.coding")
+local lsp = require("plugins.lsp")
+local formatting = require("plugins.formatting")
+local debugging = require("plugins.debug")
+local git = require("plugins.git")
+local languages = require("config.languages")
 assert(plugin_exists(ui, "folke/tokyonight.nvim"), "Tokyo Night spec is missing")
 assert(plugin_exists(ui, "folke/which-key.nvim"), "which-key spec is missing")
 assert(plugin_exists(editor, "nvim-telescope/telescope.nvim"), "Telescope spec is missing")
 assert(plugin_exists(editor, "nvim-tree/nvim-tree.lua"), "nvim-tree spec is missing")
 assert(plugin_exists(treesitter, "nvim-treesitter/nvim-treesitter"), "Treesitter spec is missing")
+assert(plugin_exists(coding, "saghen/blink.cmp"), "completion spec is missing")
+assert(plugin_exists(lsp, "neovim/nvim-lspconfig"), "LSP spec is missing")
+assert(plugin_exists(formatting, "stevearc/conform.nvim"), "formatter spec is missing")
+assert(plugin_exists(debugging, "mfussenegger/nvim-dap"), "debugger spec is missing")
+assert(plugin_exists(git, "lewis6991/gitsigns.nvim"), "Git signs spec is missing")
+
+assert_equal("clangd", languages.lsp_servers[1], "primary C/C++ LSP")
+assert_equal("basedpyright", languages.lsp_servers[2], "Python type-checking LSP")
+assert_equal("ruff", languages.lsp_servers[3], "Python lint LSP")
+assert_equal("pasls", languages.lsp_servers[4], "Pascal LSP")
+
+local expected_build_maps = {
+  c = "Build C target",
+  cpp = "Build C++ target",
+  python = "Run Python file",
+  pascal = "Build Pascal file",
+  asm = "Build assembly file",
+}
+
+for filetype, description in pairs(expected_build_maps) do
+  vim.cmd("enew")
+  vim.bo.filetype = filetype
+  dofile(config_root .. "/after/ftplugin/" .. filetype .. ".lua")
+  local mapping = vim.fn.maparg("<leader>lb", "n", false, true)
+  assert_equal(description, mapping.desc, filetype .. " build mapping")
+end
 
 print("nvim smoke: ok")
