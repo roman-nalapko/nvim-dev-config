@@ -2,7 +2,7 @@
 set -euo pipefail
 
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
-# shellcheck source=lib.sh
+# shellcheck disable=SC1091
 source "$repo_root/scripts/lib.sh"
 
 usage() {

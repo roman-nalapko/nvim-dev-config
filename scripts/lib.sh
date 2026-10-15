@@ -83,3 +83,24 @@ detect_platform() {
       ;;
   esac
 }
+
+install_configs() {
+  local repo_root=$1 config_home
+  config_home=${XDG_CONFIG_HOME:-$HOME/.config}
+  backup_and_link "$repo_root/nvim" "$config_home/nvim"
+  backup_and_link "$repo_root/ghostty" "$config_home/ghostty"
+}
+
+setup_debugpy() {
+  local data_home venv python
+  data_home=${XDG_DATA_HOME:-$HOME/.local/share}
+  venv="$data_home/nvim-dev-config/debugpy"
+  python="$venv/bin/python"
+
+  if [[ ! -x "$python" ]]; then
+    log "creating isolated Debugpy environment"
+    python3 -m venv "$venv"
+  fi
+  PIP_DISABLE_PIP_VERSION_CHECK=1 "$python" -m pip install \
+    --quiet --upgrade --retries 3 --timeout 30 debugpy
+}

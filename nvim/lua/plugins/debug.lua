@@ -41,7 +41,9 @@ return {
       dap.configurations.c = dap.configurations.cpp
       dap.configurations.asm = dap.configurations.cpp
 
-      local python = vim.fn.exepath("python3")
+      local data_home = vim.env.XDG_DATA_HOME or vim.fn.expand("~/.local/share")
+      local managed_python = data_home .. "/nvim-dev-config/debugpy/bin/python"
+      local python = vim.fn.executable(managed_python) == 1 and managed_python or vim.fn.exepath("python3")
       if python ~= "" then
         require("dap-python").setup(python)
       end
