@@ -22,12 +22,33 @@ check() {
   fi
 }
 
+check_path() {
+  local label=$1 path=$2 required=${3:-optional}
+  if [[ -e "$path" ]]; then
+    printf 'OK      %-16s %s\n' "$label" "$path"
+  else
+    printf 'MISSING %-16s %s\n' "$label" "$required"
+    if [[ "$required" == required ]]; then
+      missing=$((missing + 1))
+    fi
+  fi
+}
+
 check Neovim nvim required
 check Git git required
-check Ghostty ghostty optional
+applications_dir=${NVIM_SETUP_APPLICATIONS_DIR:-/Applications}
+if command -v ghostty >/dev/null 2>&1; then
+  check Ghostty ghostty optional
+else
+  check_path Ghostty "$applications_dir/Ghostty.app" optional
+fi
 check clangd clangd optional
 check CMake cmake optional
-check LLDB-DAP lldb-dap optional
+if command -v lldb-dap >/dev/null 2>&1; then
+  check LLDB-DAP lldb-dap optional
+else
+  check_path LLDB-DAP /opt/homebrew/opt/lldb/bin/lldb-dap optional
+fi
 check Python python3 optional
 check Ruff ruff optional
 check basedpyright basedpyright-langserver optional

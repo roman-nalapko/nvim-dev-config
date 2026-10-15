@@ -22,7 +22,11 @@ PYTHONPYCACHEPREFIX="$build_dir/pycache" python3 -m py_compile "$fixture_dir/hel
 pass 'Python fixture compiles'
 
 if command -v fpc >/dev/null 2>&1; then
-  fpc -FE"$build_dir" -FU"$build_dir" -ohello-pas "$fixture_dir/hello.pas" >/dev/null
+  if ! fpc -FE"$build_dir" -FU"$build_dir" -ohello-pas "$fixture_dir/hello.pas" \
+    >"$build_dir/fpc.log" 2>&1; then
+    cat "$build_dir/fpc.log"
+    exit 1
+  fi
   "$build_dir/hello-pas" >/dev/null
   pass 'Pascal fixture compiles and runs'
 else

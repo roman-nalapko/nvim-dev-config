@@ -61,8 +61,12 @@ return {
           lsp_map("<leader>cr", vim.lsp.buf.rename, "Rename symbol")
           lsp_map("<leader>ca", vim.lsp.buf.code_action, "Code action")
           lsp_map("<leader>cd", vim.diagnostic.open_float, "Line diagnostics")
-          lsp_map("[d", function() vim.diagnostic.jump({ count = -1, float = true }) end, "Previous diagnostic")
-          lsp_map("]d", function() vim.diagnostic.jump({ count = 1, float = true }) end, "Next diagnostic")
+          lsp_map("[d", function()
+            vim.diagnostic.jump({ count = -1, float = true })
+          end, "Previous diagnostic")
+          lsp_map("]d", function()
+            vim.diagnostic.jump({ count = 1, float = true })
+          end, "Next diagnostic")
         end,
       })
     end,

@@ -6,10 +6,10 @@ repo_root=${NVIM_SETUP_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pw
 source "$repo_root/scripts/lib.sh"
 
 formulae=(
-  neovim git cmake ninja llvm fpc nasm ripgrep fd shellcheck
-  basedpyright ruff stylua python
+  neovim git cmake ninja llvm lldb fpc nasm ripgrep fd shellcheck
+  basedpyright ruff stylua tree-sitter-cli python
 )
-casks=(ghostty)
+casks=(ghostty font-jetbrains-mono-nerd-font)
 
 case "${1:-}" in
   --print-packages)

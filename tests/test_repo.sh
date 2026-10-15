@@ -35,6 +35,11 @@ assert_contains() {
   [[ "$haystack" == *"$needle"* ]] || fail "$message (missing '$needle')"
 }
 
+assert_line() {
+  local text=$1 line=$2 message=$3
+  grep -Fqx "$line" <<<"$text" || fail "$message (missing line '$line')"
+}
+
 new_fixture() {
   cleanup
   test_root=$(mktemp -d)
@@ -114,12 +119,17 @@ test_platform_package_manifests() {
   assert_contains "$mac_packages" ghostty 'macOS manifest lacks Ghostty'
   assert_contains "$mac_packages" fpc 'macOS manifest lacks Free Pascal'
   assert_contains "$mac_packages" nasm 'macOS manifest lacks NASM'
+  assert_line "$mac_packages" lldb 'macOS manifest lacks standalone LLDB'
+  assert_line "$mac_packages" tree-sitter-cli 'macOS manifest lacks Treesitter CLI'
+  assert_line "$mac_packages" cask:font-jetbrains-mono-nerd-font 'macOS manifest lacks the configured Nerd Font'
 
   debian_packages=$("$repo_root/scripts/install-debian.sh" --print-packages)
   assert_contains "$debian_packages" clangd 'Debian manifest lacks clangd'
   assert_contains "$debian_packages" fpc 'Debian manifest lacks Free Pascal'
   assert_contains "$debian_packages" nasm 'Debian manifest lacks NASM'
   assert_contains "$debian_packages" nvim-linux-x86_64 'Debian manifest lacks official Neovim build'
+  assert_line "$debian_packages" tree-sitter-cli 'Debian manifest lacks Treesitter CLI install'
+  assert_line "$debian_packages" jetbrains-mono-nerd-font 'Debian manifest lacks the configured Nerd Font'
   pass 'platform package manifests cover the required toolchains'
 }
 
@@ -149,16 +159,21 @@ test_main_installer_routes_to_debian() {
 
 test_ghostty_transparency_and_read_only_healthcheck() {
   new_fixture
-  local opacity before after report
+  local opacity font before after report
+  mkdir -p "$test_root/Applications/Ghostty.app"
   opacity=$(awk -F '=' '$1 ~ /^background-opacity[[:space:]]*$/ { gsub(/[[:space:]]/, "", $2); print $2 }' "$repo_root/ghostty/config.ghostty")
+  font=$(awk -F '=' '$1 ~ /^font-family[[:space:]]*$/ { sub(/^[[:space:]]*/, "", $2); sub(/[[:space:]]*$/, "", $2); print $2 }' "$repo_root/ghostty/config.ghostty")
   assert_eq 0.86 "$opacity" 'Ghostty opacity is not the designed value'
+  assert_eq 'JetBrainsMono Nerd Font' "$font" 'Ghostty does not select the installed Nerd Font'
 
   before=$(find "$test_root" -print | sort)
-  report=$(HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/config" "$repo_root/scripts/healthcheck.sh")
+  report=$(HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/config" \
+    NVIM_SETUP_APPLICATIONS_DIR="$test_root/Applications" "$repo_root/scripts/healthcheck.sh")
   after=$(find "$test_root" -print | sort)
   assert_eq "$before" "$after" 'healthcheck modified the filesystem'
   assert_contains "$report" 'Neovim' 'healthcheck omits Neovim'
   assert_contains "$report" 'Ghostty' 'healthcheck omits Ghostty'
+  assert_contains "$report" 'OK      Ghostty' 'healthcheck does not recognize the macOS app'
   pass 'Ghostty is transparent and healthcheck is read-only'
 }
 
