@@ -16,6 +16,10 @@ function M.shell_join(parts)
   return shell_join(parts)
 end
 
+function M.choose_executable(default)
+  return vim.fn.input("Executable: ", default, "file")
+end
+
 function M.open_terminal(command, cwd)
   vim.cmd("botright 12split | enew")
   vim.bo.bufhidden = "wipe"

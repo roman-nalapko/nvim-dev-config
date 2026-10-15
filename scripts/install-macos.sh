@@ -6,7 +6,7 @@ repo_root=${NVIM_SETUP_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pw
 source "$repo_root/scripts/lib.sh"
 
 formulae=(
-  neovim git cmake ninja llvm lldb fpc nasm ripgrep fd shellcheck
+  neovim git cmake ninja llvm lldb clang-format fpc nasm ripgrep fd shellcheck
   basedpyright ruff stylua tree-sitter-cli python
 )
 casks=(ghostty font-jetbrains-mono-nerd-font)
@@ -20,6 +20,8 @@ case "${1:-}" in
   --config-only|'') ;;
   *) die "unknown argument: $1"; exit 2 ;;
 esac
+
+require_platform macos arm64
 
 if [[ "${1:-}" != --config-only ]]; then
   command -v brew >/dev/null 2>&1 || {

@@ -85,4 +85,28 @@ for filetype, description in pairs(expected_build_maps) do
   assert_equal(description, mapping.desc, filetype .. " build mapping")
 end
 
+local project_root = vim.fn.tempname()
+vim.fn.mkdir(project_root .. "/src", "p")
+project_root = assert(vim.uv.fs_realpath(project_root))
+vim.fn.writefile({ "cmake_minimum_required(VERSION 3.20)", "project(smoke)", "add_executable(app src/main.c)" }, project_root .. "/CMakeLists.txt")
+vim.fn.writefile({ "int main(void) { return 0; }" }, project_root .. "/src/main.c")
+vim.cmd("edit " .. vim.fn.fnameescape(project_root .. "/src/main.c"))
+vim.bo.filetype = "c"
+dofile(config_root .. "/after/ftplugin/c.lua")
+local captured_command
+local captured_cwd
+local build = require("config.build")
+build.choose_executable = function(default)
+  assert_equal(project_root .. "/build/", default, "CMake executable prompt default")
+  return project_root .. "/build/app"
+end
+build.open_terminal = function(command, cwd)
+  captured_command = command
+  captured_cwd = cwd
+end
+vim.fn.maparg("<leader>lr", "n", false, true).callback()
+assert_equal(vim.fn.shellescape(project_root .. "/build/app"), captured_command, "CMake run command")
+assert_equal(project_root, captured_cwd, "CMake run directory")
+vim.fn.delete(project_root, "rf")
+
 print("nvim smoke: ok")

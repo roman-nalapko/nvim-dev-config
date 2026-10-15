@@ -44,6 +44,7 @@ else
 fi
 check clangd clangd optional
 check CMake cmake optional
+check clang-format clang-format optional
 if command -v lldb-dap >/dev/null 2>&1; then
   check LLDB-DAP lldb-dap optional
 else

@@ -120,6 +120,7 @@ test_platform_package_manifests() {
   assert_contains "$mac_packages" fpc 'macOS manifest lacks Free Pascal'
   assert_contains "$mac_packages" nasm 'macOS manifest lacks NASM'
   assert_line "$mac_packages" lldb 'macOS manifest lacks standalone LLDB'
+  assert_line "$mac_packages" clang-format 'macOS manifest lacks PATH-visible clang-format'
   assert_line "$mac_packages" tree-sitter-cli 'macOS manifest lacks Treesitter CLI'
   assert_line "$mac_packages" cask:font-jetbrains-mono-nerd-font 'macOS manifest lacks the configured Nerd Font'
 
@@ -130,17 +131,52 @@ test_platform_package_manifests() {
   assert_contains "$debian_packages" nvim-linux-x86_64 'Debian manifest lacks official Neovim build'
   assert_line "$debian_packages" tree-sitter-cli 'Debian manifest lacks Treesitter CLI install'
   assert_line "$debian_packages" jetbrains-mono-nerd-font 'Debian manifest lacks the configured Nerd Font'
+  assert_line "$debian_packages" python-tool:basedpyright 'Debian manifest lacks basedpyright install'
+  assert_line "$debian_packages" python-tool:ruff 'Debian manifest lacks Ruff install'
+  assert_line "$debian_packages" stylua 'Debian manifest lacks StyLua install'
   pass 'platform package manifests cover the required toolchains'
+}
+
+test_direct_installers_reject_wrong_platform_before_changes() {
+  new_fixture
+  local before after
+  before=$(find "$test_root" -print | sort)
+  if HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/config" \
+    NVIM_SETUP_UNAME=Linux NVIM_SETUP_OS_ID=ubuntu NVIM_SETUP_ARCH=x86_64 \
+    "$repo_root/scripts/install-debian.sh" --config-only >/dev/null 2>&1; then
+    fail 'direct Debian installer accepted Ubuntu'
+  fi
+  after=$(find "$test_root" -print | sort)
+  assert_eq "$before" "$after" 'rejected Debian install changed files'
+
+  if HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/config" \
+    NVIM_SETUP_UNAME=Linux NVIM_SETUP_OS_ID=debian NVIM_SETUP_ARCH=x86_64 \
+    "$repo_root/scripts/install-macos.sh" --config-only >/dev/null 2>&1; then
+    fail 'direct macOS installer accepted Linux'
+  fi
+  after=$(find "$test_root" -print | sort)
+  assert_eq "$before" "$after" 'rejected macOS install changed files'
+
+  if HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/config" \
+    NVIM_SETUP_UNAME=Linux NVIM_SETUP_OS_ID=debian NVIM_SETUP_ARCH=aarch64 \
+    "$repo_root/scripts/install-debian.sh" --config-only >/dev/null 2>&1; then
+    fail 'direct Debian installer accepted a non-x86-64 host'
+  fi
+  after=$(find "$test_root" -print | sort)
+  assert_eq "$before" "$after" 'rejected architecture changed files'
+  pass 'direct installers reject unsupported hosts before changes'
 }
 
 test_config_only_install_is_idempotent() {
   new_fixture
   HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/config" \
+    NVIM_SETUP_UNAME=Darwin NVIM_SETUP_ARCH=arm64 \
     "$repo_root/scripts/install-macos.sh" --config-only >/dev/null
   [[ -L "$test_root/config/nvim" ]] || fail 'config-only install did not link Neovim'
   [[ -L "$test_root/config/ghostty" ]] || fail 'config-only install did not link Ghostty'
 
   HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/config" \
+    NVIM_SETUP_UNAME=Darwin NVIM_SETUP_ARCH=arm64 \
     "$repo_root/scripts/install-macos.sh" --config-only >/dev/null
   if find "$test_root/config" -maxdepth 1 -name '*.backup-*' | grep -q .; then
     fail 'repeated config-only install created backups'
@@ -151,7 +187,7 @@ test_config_only_install_is_idempotent() {
 test_main_installer_routes_to_debian() {
   new_fixture
   HOME="$test_root/home" XDG_CONFIG_HOME="$test_root/config" \
-    NVIM_SETUP_UNAME=Linux NVIM_SETUP_OS_ID=debian \
+    NVIM_SETUP_UNAME=Linux NVIM_SETUP_OS_ID=debian NVIM_SETUP_ARCH=x86_64 \
     "$repo_root/scripts/install.sh" --config-only >/dev/null
   [[ -L "$test_root/config/nvim" ]] || fail 'main installer did not route to Debian config install'
   pass 'main installer routes Debian without package side effects'
@@ -184,6 +220,7 @@ test_repeated_run_is_idempotent
 test_backup_collision_is_rejected
 test_platform_detection
 test_platform_package_manifests
+test_direct_installers_reject_wrong_platform_before_changes
 test_config_only_install_is_idempotent
 test_main_installer_routes_to_debian
 test_ghostty_transparency_and_read_only_healthcheck

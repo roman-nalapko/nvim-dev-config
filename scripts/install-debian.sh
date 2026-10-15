@@ -13,7 +13,31 @@ packages=(
 
 print_packages() {
   printf '%s\n' "${packages[@]}"
-  printf '%s\n' nvim-linux-x86_64 tree-sitter-cli jetbrains-mono-nerd-font ghostty-if-available
+  printf '%s\n' nvim-linux-x86_64 tree-sitter-cli jetbrains-mono-nerd-font \
+    python-tool:basedpyright python-tool:ruff stylua ghostty-if-available
+}
+
+install_stylua() {
+  local version=2.5.2 expected temp_dir archive install_root
+  expected=ca6f1cf52eaf69e6632b81acef9c197aa24b85eb30d2455a35e7dbe28ae77c72
+
+  if command -v stylua >/dev/null 2>&1; then
+    return 0
+  fi
+  temp_dir=$(mktemp -d)
+  archive="$temp_dir/stylua-linux-x86_64-musl.zip"
+  curl --fail --location --silent --show-error --retry 3 \
+    --connect-timeout 15 --max-time 180 \
+    "https://github.com/JohnnyMorganz/StyLua/releases/download/v${version}/stylua-linux-x86_64-musl.zip" \
+    --output "$archive"
+  printf '%s  %s\n' "$expected" "$archive" | sha256sum --check -
+  unzip -q "$archive" -d "$temp_dir/extracted"
+  chmod +x "$temp_dir/extracted/stylua"
+  install_root="$HOME/.local/opt/stylua-$version"
+  mkdir -p "$install_root"
+  mv "$temp_dir/extracted/stylua" "$install_root/stylua"
+  backup_and_link "$install_root/stylua" "$HOME/.local/bin/stylua"
+  rm -rf "$temp_dir"
 }
 
 install_nerd_font() {
@@ -107,6 +131,8 @@ case "${1:-}" in
   *) die "unknown argument: $1"; exit 2 ;;
 esac
 
+require_platform debian x86_64
+
 if [[ "${1:-}" != --config-only ]]; then
   if ((EUID == 0)); then
     apt=(apt-get)
@@ -118,6 +144,7 @@ if [[ "${1:-}" != --config-only ]]; then
   "${apt[@]}" -o Acquire::Retries=3 -o Acquire::http::Timeout=30 install -y "${packages[@]}"
   install_neovim
   install_tree_sitter_cli
+  install_stylua
   install_nerd_font
   if ! command -v fd >/dev/null 2>&1 && command -v fdfind >/dev/null 2>&1; then
     backup_and_link "$(command -v fdfind)" "$HOME/.local/bin/fd"
@@ -129,6 +156,7 @@ if [[ "${1:-}" != --config-only ]]; then
     log 'Ghostty is not in this Debian repository; see README for verified alternatives.'
   fi
   setup_debugpy
+  setup_python_tools
 fi
 
 install_configs "$repo_root"

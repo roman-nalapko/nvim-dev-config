@@ -38,8 +38,9 @@ To link only the configuration and skip all packages:
 ## macOS
 
 The installer uses Homebrew for Neovim, Ghostty, Git, CMake, Ninja, LLVM,
-standalone LLDB, Free Pascal, NASM, ripgrep, fd, ShellCheck, basedpyright,
-Ruff, StyLua, Tree-sitter CLI, Python, and JetBrainsMono Nerd Font. Debugpy is
+standalone LLDB, a PATH-visible clang-format, Free Pascal, NASM, ripgrep, fd,
+ShellCheck, basedpyright, Ruff, StyLua, Tree-sitter CLI, Python, and
+JetBrainsMono Nerd Font. Debugpy is
 installed in an isolated environment under
 `~/.local/share/nvim-dev-config/debugpy`.
 
@@ -58,7 +59,11 @@ the current official Neovim x86-64 release and a checksum-verified Tree-sitter
 CLI under `~/.local/opt`. This avoids the older Neovim versions present in some
 Debian releases and supplies the parser compiler required by this setup. It
 also installs a checksum-verified JetBrainsMono Nerd Font in the user's local
-font directory so Neovim icons render correctly.
+font directory so Neovim icons render correctly. Basedpyright and Ruff are
+installed into an isolated Python environment and linked through
+`~/.local/bin`; project environments remain untouched.
+StyLua is installed as a checksum-verified standalone binary in
+`~/.local/opt`.
 
 ```bash
 sudo apt update
@@ -104,6 +109,8 @@ Use `--strict` when automation should fail if Neovim or Git is missing.
 - clangd diagnostics, navigation, refactoring, and completion.
 - clang-format on save.
 - CMake/Make detection; single files fall back to Clang with debug symbols.
+- Project run commands ask for the produced executable because CMake and Make
+  targets do not have to match the current source filename.
 - LLDB-DAP debugging through `nvim-dap`.
 
 ### Python
