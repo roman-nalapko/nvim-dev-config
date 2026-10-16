@@ -13,13 +13,17 @@ fail() { printf 'not ok - %s\n' "$1" >&2; exit 1; }
 
 for section in \
   'Requirements' 'Quick start' 'macOS' 'Debian x86-64' \
-  'What the installer changes' 'Language support' 'Updating' \
+  'What the installer changes' 'Language support' 'Essential keymaps' 'Updating' \
   'Uninstall and restore' 'Troubleshooting'; do
   rg -Fq "## $section" "$readme" || fail "README section missing: $section"
 done
 
 for phrase in 'Ghostty is optional' 'backup-' 'Free Pascal' 'NASM' 'ARM64' 'CMake' 'Debugpy'; do
   rg -Fq "$phrase" "$readme" || fail "README contract missing: $phrase"
+done
+
+for mapping in '<leader>ff' '<leader>cf' '<leader>lb' '<leader>db' '<leader>gg' '<leader>tt'; do
+  rg -Fq "$mapping" "$readme" || fail "README keymap table missing: $mapping"
 done
 
 for group in 'Basics' 'Navigation' 'Find' 'Buffers' 'Windows' 'LSP and diagnostics' \

@@ -160,6 +160,47 @@ Use `--strict` when automation should fail if Neovim or Git is missing.
 - Apple Silicon: ARM64 `.s` sources assembled and linked by Clang, then LLDB.
 - The two targets intentionally use separate fixtures and build commands.
 
+## Essential keymaps
+
+`<leader>` is the Space key. Press Space and pause briefly to open which-key.
+Mappings under `<leader>l` are local to the current language and appear only
+for supported file types.
+
+| Group | Key | Action |
+| --- | --- | --- |
+| Modes | `i` / `<Esc>` | Enter Insert mode / return to Normal mode |
+| Editing | `<C-s>` | Save from Normal, Insert, or Visual mode |
+| Editing | `u` / `<C-r>` | Undo / redo |
+| Editing | `yy` / `dd` / `p` | Copy line / delete line / paste |
+| Navigation | `h j k l` | Move left, down, up, right |
+| Navigation | `w` / `b` | Next / previous word |
+| Navigation | `gg` / `G` | First / last line |
+| Navigation | `<C-d>` / `<C-u>` | Half-page down / up |
+| Files | `<leader>e` | Toggle file explorer |
+| Find | `<leader>ff` / `<leader>fg` | Find files / search project text |
+| Find | `<leader>fb` / `<leader>fr` | Find buffers / recent files |
+| Buffers | `]b` / `[b` | Next / previous buffer |
+| Buffers | `<leader>bd` | Delete current buffer |
+| Windows | `<leader>sv` / `<leader>sh` | Vertical / horizontal split |
+| Windows | `<C-h/j/k/l>` | Focus the window in that direction |
+| LSP | `gd` / `gr` / `K` | Definition / references / documentation |
+| LSP | `<leader>cf` | Format buffer or selection |
+| LSP | `<leader>cr` / `<leader>ca` | Rename symbol / code action |
+| Diagnostics | `[d` / `]d` | Previous / next diagnostic |
+| Build | `<leader>lb` | Build current language target; run Python file |
+| Run | `<leader>lr` | Run compiled C/C++/Pascal/ASM target |
+| Test | `<leader>lt` | Run pytest for the current Python file |
+| Debug | `<F5>` / `<F10>` / `<F11>` / `<F12>` | Continue / step over / into / out |
+| Debug | `<leader>db` / `<leader>du` / `<leader>dr` | Breakpoint / debug UI / REPL |
+| Git | `<leader>gg` | Open Fugitive Git status |
+| Git | `]h` / `[h` | Next / previous changed hunk |
+| Git | `<leader>gp` / `<leader>gs` / `<leader>gr` | Preview / stage / reset hunk |
+| Terminal | `<leader>tt` / `<leader>th` | Floating / horizontal terminal |
+| Terminal | `<C-\>` / `<Esc><Esc>` | Toggle terminal / leave Terminal mode |
+
+The complete reference, including Vim's native commands and a suggested
+learning order, is in [docs/KEYMAPS.md](docs/KEYMAPS.md).
+
 ## Updating
 
 ```bash
