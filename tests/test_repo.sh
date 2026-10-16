@@ -112,6 +112,21 @@ test_platform_detection() {
   pass 'platform detection accepts macOS and Debian only'
 }
 
+test_versioned_lldb_dap_resolution() {
+  new_fixture
+  mkdir -p "$test_root/root/usr/lib/llvm-18/bin" "$test_root/root/usr/lib/llvm-19/bin"
+  : >"$test_root/root/usr/lib/llvm-18/bin/lldb-dap"
+  : >"$test_root/root/usr/lib/llvm-19/bin/lldb-dap"
+  chmod +x "$test_root/root/usr/lib/llvm-18/bin/lldb-dap" "$test_root/root/usr/lib/llvm-19/bin/lldb-dap"
+  local resolved
+  resolved=$(NVIM_SETUP_LLVM_ROOT="$test_root/root" find_lldb_dap)
+  assert_eq "$test_root/root/usr/lib/llvm-19/bin/lldb-dap" "$resolved" 'did not select newest versioned LLDB-DAP'
+  local report
+  report=$(NVIM_SETUP_LLVM_ROOT="$test_root/root" "$repo_root/scripts/healthcheck.sh")
+  assert_contains "$report" "$test_root/root/usr/lib/llvm-19/bin/lldb-dap" 'healthcheck did not report versioned LLDB-DAP'
+  pass 'versioned LLDB-DAP resolution selects the newest adapter'
+}
+
 test_platform_package_manifests() {
   local mac_packages debian_packages
   mac_packages=$("$repo_root/scripts/install-macos.sh" --print-packages)
@@ -219,6 +234,7 @@ test_missing_parent_is_created
 test_repeated_run_is_idempotent
 test_backup_collision_is_rejected
 test_platform_detection
+test_versioned_lldb_dap_resolution
 test_platform_package_manifests
 test_direct_installers_reject_wrong_platform_before_changes
 test_config_only_install_is_idempotent

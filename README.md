@@ -9,6 +9,29 @@ The visual style is based on Tokyo Night with a transparent editor background.
 Ghostty provides the actual window opacity and blur. **Ghostty is optional**:
 Neovim continues to work in Terminal.app and other capable terminals.
 
+## Architecture and design
+
+- **Small, readable modules:** `init.lua` only checks the Neovim version and
+  loads the configuration. Options, keymaps, language definitions, build
+  helpers, and plugin groups live in separate Lua modules.
+- **Reproducible plugins:** `lazy-lock.json` is committed. Updates restore this
+  lock instead of silently selecting newer plugin revisions.
+- **User-local tools:** standalone binaries and isolated Python environments
+  live below `~/.local`; the scripts never write to `/usr/local/bin`.
+- **Safe configuration links:** existing Neovim or Ghostty configuration is
+  timestamped and preserved before a managed symlink is created.
+- **Explicit platform boundary:** installers fail before making changes on an
+  unsupported operating system or CPU architecture.
+
+| Platform | Architecture | Assembly workflow | Terminal |
+| --- | --- | --- | --- |
+| macOS | Apple Silicon (`arm64`) | Clang, ARM64 `.s` | Ghostty via Homebrew |
+| Debian | x86-64 | NASM, Intel syntax, ELF64 | Ghostty when available from configured APT repositories |
+
+Ubuntu and Debian ARM64 are not currently supported by the bootstrap scripts.
+The Lua configuration may work there, but package installation has not been
+implemented or tested.
+
 ## Requirements
 
 - macOS on Apple Silicon with [Homebrew](https://brew.sh), or Debian x86-64.
@@ -64,6 +87,9 @@ installed into an isolated Python environment and linked through
 `~/.local/bin`; project environments remain untouched.
 StyLua is installed as a checksum-verified standalone binary in
 `~/.local/opt`.
+If Debian's LLVM package exposes only a versioned debugger adapter, the
+installer selects the newest `lldb-dap` or `lldb-vscode` candidate and creates
+`~/.local/bin/lldb-dap`. It never needs a system-wide symlink.
 
 ```bash
 sudo apt update
@@ -137,13 +163,50 @@ Use `--strict` when automation should fail if Neovim or Git is missing.
 ## Updating
 
 ```bash
-git pull --ff-only
-./scripts/install.sh --config-only
-nvim --headless "+Lazy! sync" +qa
+./scripts/update.sh
 ```
 
-Inside Neovim, use `:Lazy sync` for plugins and `:TSUpdate` for parsers.
-Review upstream breaking changes before changing the minimum Neovim version.
+The updater requires a clean Git working tree, pulls with `--ff-only`, refreshes
+the managed configuration links, restores the committed plugin lock, installs
+missing Treesitter parsers, updates installed parsers, and runs the strict
+healthcheck. It does not upgrade APT or Homebrew packages by default.
+
+Preview every command without changing anything:
+
+```bash
+./scripts/update.sh --dry-run
+```
+
+Re-run the platform package installer as part of the update when you explicitly
+want dependency upgrades:
+
+```bash
+./scripts/update.sh --with-packages
+```
+
+Inside Neovim, `:Lazy` shows plugin state. `:TSUpdate` remains available for a
+manual parser update.
+
+## Repository layout
+
+```text
+.
+├── ghostty/config.ghostty      # opacity, blur, font, and terminal key bindings
+├── nvim/
+│   ├── init.lua               # version gate and configuration entry point
+│   ├── after/ftplugin/        # language-specific build and run mappings
+│   └── lua/
+│       ├── config/            # editor, language, build, and parser modules
+│       └── plugins/           # focused lazy.nvim plugin specifications
+├── scripts/
+│   ├── install.sh             # platform router
+│   ├── install-macos.sh
+│   ├── install-debian.sh
+│   ├── update.sh              # safe repository and runtime lifecycle
+│   └── healthcheck.sh         # read-only environment report
+├── tests/                     # shell, Neovim, docs, and toolchain checks
+└── docs/KEYMAPS.md            # keymap reference and Vim survival guide
+```
 
 ## Uninstall and restore
 
@@ -169,6 +232,16 @@ Remove them manually only after checking that no other workflow uses them.
 - Run `:LspInfo` and confirm the language server executable is on `PATH`.
 - Generate `compile_commands.json` for non-trivial CMake C/C++ projects.
 - On Debian, ensure `~/.local/bin` precedes an old system Neovim in `PATH`.
+- Debian calls the `fd-find` executable `fdfind`; the installer creates a
+  user-local `fd` link when necessary.
+- Basedpyright needs both `basedpyright` and `basedpyright-langserver`; both are
+  linked from the isolated tools environment.
+- If LLDB debugging is missing on Debian, run
+  `find /usr/lib -path '*/bin/lldb-dap' -type f 2>/dev/null` and then re-run the
+  installer. `healthcheck.sh` also recognizes versioned LLVM paths directly.
+- If parser installation reports that `tree-sitter` is missing, confirm
+  `~/.local/bin/tree-sitter --version` works and that `~/.local/bin` is in
+  `PATH`.
 - If transparency is missing, restart Ghostty completely; Ghostty documents
   that opacity changes on macOS require a restart.
 - Pascal compiler support works without `pasls`; LSP features do not.

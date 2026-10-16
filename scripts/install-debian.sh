@@ -149,6 +149,13 @@ if [[ "${1:-}" != --config-only ]]; then
   if ! command -v fd >/dev/null 2>&1 && command -v fdfind >/dev/null 2>&1; then
     backup_and_link "$(command -v fdfind)" "$HOME/.local/bin/fd"
   fi
+  if ! command -v lldb-dap >/dev/null 2>&1; then
+    if lldb_dap=$(find_lldb_dap); then
+      backup_and_link "$lldb_dap" "$HOME/.local/bin/lldb-dap"
+    else
+      log 'LLDB-DAP was not found; C/C++ debugging will remain unavailable.'
+    fi
+  fi
 
   if apt-cache show ghostty >/dev/null 2>&1; then
     "${apt[@]}" -o Acquire::Retries=3 install -y ghostty

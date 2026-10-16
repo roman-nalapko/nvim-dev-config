@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+repo_root=${NVIM_SETUP_REPO_ROOT:-$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)}
+# shellcheck disable=SC1091
+source "$repo_root/scripts/lib.sh"
+
 strict=0
 if [[ "${1:-}" == --strict ]]; then
   strict=1
@@ -45,10 +49,10 @@ fi
 check clangd clangd optional
 check CMake cmake optional
 check clang-format clang-format optional
-if command -v lldb-dap >/dev/null 2>&1; then
-  check LLDB-DAP lldb-dap optional
+if lldb_dap=$(find_lldb_dap 2>/dev/null); then
+  check_path LLDB-DAP "$lldb_dap" optional
 else
-  check_path LLDB-DAP /opt/homebrew/opt/lldb/bin/lldb-dap optional
+  printf 'MISSING %-16s %s\n' LLDB-DAP optional
 fi
 check Python python3 optional
 check Ruff ruff optional

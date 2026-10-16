@@ -1,20 +1,4 @@
-local parsers = {
-  "asm",
-  "bash",
-  "c",
-  "cmake",
-  "cpp",
-  "json",
-  "lua",
-  "make",
-  "markdown",
-  "markdown_inline",
-  "python",
-  "query",
-  "vim",
-  "vimdoc",
-  "yaml",
-}
+local treesitter = require("config.treesitter")
 
 return {
   {
@@ -24,9 +8,9 @@ return {
     build = ":TSUpdate",
     dependencies = { "neovim-treesitter/treesitter-parser-registry" },
     config = function()
-      require("nvim-treesitter").install(parsers)
+      treesitter.install()
       vim.api.nvim_create_autocmd("FileType", {
-        pattern = parsers,
+        pattern = treesitter.parsers,
         callback = function()
           pcall(vim.treesitter.start)
           vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"

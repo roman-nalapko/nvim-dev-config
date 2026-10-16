@@ -98,6 +98,47 @@ require_platform() {
   }
 }
 
+find_lldb_dap() {
+  local search_root=${NVIM_SETUP_LLVM_ROOT:-} candidate best='' version best_version=-1
+  local -a candidates=()
+
+  if [[ -z "$search_root" ]]; then
+    if command -v lldb-dap >/dev/null 2>&1; then
+      command -v lldb-dap
+      return 0
+    fi
+    if [[ -x /opt/homebrew/opt/lldb/bin/lldb-dap ]]; then
+      printf '%s\n' /opt/homebrew/opt/lldb/bin/lldb-dap
+      return 0
+    fi
+  fi
+
+  shopt -s nullglob
+  candidates+=(
+    "${search_root}/usr/lib"/llvm-*/bin/lldb-dap
+    "${search_root}/usr/bin"/lldb-dap-*
+    "${search_root}/usr/bin"/lldb-vscode-*
+  )
+  shopt -u nullglob
+
+  for candidate in "${candidates[@]}"; do
+    [[ -x "$candidate" ]] || continue
+    version=0
+    if [[ "$candidate" =~ /llvm-([0-9]+)/ ]]; then
+      version=${BASH_REMATCH[1]}
+    elif [[ "$candidate" =~ -([0-9]+)$ ]]; then
+      version=${BASH_REMATCH[1]}
+    fi
+    if ((version > best_version)); then
+      best=$candidate
+      best_version=$version
+    fi
+  done
+
+  [[ -n "$best" ]] || return 1
+  printf '%s\n' "$best"
+}
+
 install_configs() {
   local repo_root=$1 config_home
   config_home=${XDG_CONFIG_HOME:-$HOME/.config}

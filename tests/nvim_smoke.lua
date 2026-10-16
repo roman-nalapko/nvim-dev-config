@@ -53,6 +53,7 @@ local formatting = require("plugins.formatting")
 local debugging = require("plugins.debug")
 local git = require("plugins.git")
 local languages = require("config.languages")
+local treesitter_config = require("config.treesitter")
 assert(plugin_exists(ui, "folke/tokyonight.nvim"), "Tokyo Night spec is missing")
 assert(plugin_exists(ui, "folke/which-key.nvim"), "which-key spec is missing")
 assert(plugin_exists(editor, "nvim-telescope/telescope.nvim"), "Telescope spec is missing")
@@ -68,6 +69,10 @@ assert_equal("clangd", languages.lsp_servers[1], "primary C/C++ LSP")
 assert_equal("basedpyright", languages.lsp_servers[2], "Python type-checking LSP")
 assert_equal("ruff", languages.lsp_servers[3], "Python lint LSP")
 assert_equal("pasls", languages.lsp_servers[4], "Pascal LSP")
+assert_equal(15, #treesitter_config.parsers, "configured Treesitter parser count")
+assert(vim.tbl_contains(treesitter_config.parsers, "c"), "C Treesitter parser is missing")
+assert(vim.tbl_contains(treesitter_config.parsers, "cpp"), "C++ Treesitter parser is missing")
+assert(vim.tbl_contains(treesitter_config.parsers, "python"), "Python Treesitter parser is missing")
 
 local expected_build_maps = {
   c = "Build C target",
